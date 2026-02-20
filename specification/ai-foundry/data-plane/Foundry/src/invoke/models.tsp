@@ -317,6 +317,8 @@ model InvokeResponse {
 }
 
 // --- Streaming Events ---
+// SSE events use the `event:` line for type discrimination.
+// The `data:` payload is flat (no wrapper object) per the design spec.
 
 @doc("SSE event types for streaming invocations.")
 union InvokeStreamEventType {
@@ -341,17 +343,8 @@ union InvokeStreamEventType {
   error: "error",
 }
 
-@doc("A streaming event from an invocation.")
-@discriminator("type")
-model InvokeStreamEvent {
-  @doc("The event type.")
-  type: InvokeStreamEventType;
-}
-
-@doc("Invocation started event.")
-model InvocationCreatedEvent extends InvokeStreamEvent {
-  type: InvokeStreamEventType.invocation_created;
-
+@doc("SSE data payload for invocation.created event.")
+model InvocationCreatedEvent {
   @doc("The invocation ID.")
   id: string;
 
@@ -365,10 +358,8 @@ model InvocationCreatedEvent extends InvokeStreamEvent {
   status: "in_progress";
 }
 
-@doc("Incremental text chunk from the agent.")
-model MessageDeltaEvent extends InvokeStreamEvent {
-  type: InvokeStreamEventType.message_delta;
-
+@doc("SSE data payload for message.delta event.")
+model MessageDeltaEvent {
   @doc("Sequence number starting at 1, incrementing with each delta.")
   sequence_number: int32;
 
@@ -376,34 +367,9 @@ model MessageDeltaEvent extends InvokeStreamEvent {
   delta: string;
 }
 
-@doc("An annotation event.")
-model AnnotationEvent extends InvokeStreamEvent {
-  type: InvokeStreamEventType.annotation;
-
-  @doc("The annotation data.")
-  annotation: InvokeAnnotation;
-}
-
-@doc("An interrupt event for human-in-the-loop.")
-model InterruptEvent extends InvokeStreamEvent {
-  type: InvokeStreamEventType.interrupt;
-
-  @doc("The interrupt information.")
-  interrupt: InterruptInfo;
-}
-
-@doc("Terminal event containing the full response.")
-model InvocationCompletedEvent extends InvokeStreamEvent {
-  type: InvokeStreamEventType.invocation_completed;
-
-  @doc("The full invocation response.")
-  response: InvokeResponse;
-}
-
-@doc("Stream-level error event.")
-model InvokeErrorEvent extends InvokeStreamEvent {
-  type: InvokeStreamEventType.error;
-
-  @doc("The error information.")
-  error: InvokeError;
-}
+// Note: The annotation SSE event data is the InvokeAnnotation object itself (flat).
+// The interrupt SSE event data is the InterruptInfo object itself (flat: {id, message}).
+// The invocation.completed SSE event data is the InvokeResponse object itself (flat).
+// The error SSE event data is the InvokeError object itself (flat: {code, message}).
+// These reuse InvokeAnnotation, InterruptInfo, InvokeResponse, and InvokeError directly
+// as their SSE data payloads — no separate wrapper models needed.

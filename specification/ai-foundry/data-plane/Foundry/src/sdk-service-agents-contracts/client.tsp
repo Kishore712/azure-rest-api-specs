@@ -266,19 +266,11 @@ namespace Azure.AI.Projects {
   @@access(InterruptInfo, Access.public);
   @@usage(InterruptInfo, Usage.output);
 
-  // Invoke streaming event types
-  @@access(InvokeStreamEvent, Access.public);
-  @@usage(InvokeStreamEvent, Usage.output);
+  // Invoke streaming event types (standalone models — SSE event: line handles discrimination)
   @@access(InvocationCreatedEvent, Access.public);
   @@usage(InvocationCreatedEvent, Usage.output);
   @@access(MessageDeltaEvent, Access.public);
   @@usage(MessageDeltaEvent, Usage.output);
-  @@access(AnnotationEvent, Access.public);
-  @@usage(AnnotationEvent, Usage.output);
-  @@access(InterruptEvent, Access.public);
-  @@usage(InterruptEvent, Usage.output);
-  @@access(InvocationCompletedEvent, Access.public);
-  @@usage(InvocationCompletedEvent, Usage.output);
-  @@access(InvokeErrorEvent, Access.public);
-  @@usage(InvokeErrorEvent, Usage.output);
+  // annotation, interrupt, invocation.completed, and error SSE events reuse
+  // InvokeAnnotation, InterruptInfo, InvokeResponse, and InvokeError directly
 }
