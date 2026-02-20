@@ -247,4 +247,14 @@ namespace Azure.AI.Projects {
 
   @@access(OpenAI.OutputItemCustomToolCallOutput, Access.public);
   @@usage(OpenAI.OutputItemCustomToolCallOutput, Usage.input | Usage.output);
+
+  // Invoke API types
+  @@access(InvokeRequest, Access.public);
+  @@usage(InvokeRequest, Usage.input);
+  @@access(InvokeResponse, Access.public);
+  @@usage(InvokeResponse, Usage.output);
+  @@access(AgentDef, Access.public);
+  @@usage(AgentDef, Usage.input);
+  @@access(ResumeRequest, Access.public);
+  @@usage(ResumeRequest, Usage.input);
 }
