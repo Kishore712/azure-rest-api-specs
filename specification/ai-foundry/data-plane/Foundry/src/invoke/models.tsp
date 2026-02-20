@@ -55,8 +55,8 @@ union InputSourceType {
   base64: "base64",
 }
 
-@doc("The type of annotation.")
-union AnnotationType {
+@doc("The type of invoke annotation.")
+union InvokeAnnotationType {
   string,
 
   @doc("A file annotation.")
@@ -195,14 +195,14 @@ model ResumeRequest {
 
 @doc("An annotation attached to an invocation response.")
 @discriminator("type")
-model Annotation {
+model InvokeAnnotation {
   @doc("The annotation type.")
-  type: AnnotationType;
+  type: InvokeAnnotationType;
 }
 
 @doc("A file annotation produced by the agent.")
-model FileAnnotation extends Annotation {
-  type: AnnotationType.file;
+model InvokeFileAnnotation extends InvokeAnnotation {
+  type: InvokeAnnotationType.file;
 
   @doc("The platform-managed file ID.")
   file_id: string;
@@ -299,7 +299,7 @@ model InvokeResponse {
   message: string;
 
   @doc("Array of annotations (file references, citations) attached to the response. Empty when text-only.")
-  annotations: Annotation[];
+  annotations: InvokeAnnotation[];
 
   @doc("Non-null when status is requires_input. Contains interrupt ID and message.")
   interrupt?: InterruptInfo;
@@ -381,7 +381,7 @@ model AnnotationEvent extends InvokeStreamEvent {
   type: InvokeStreamEventType.annotation;
 
   @doc("The annotation data.")
-  annotation: Annotation;
+  annotation: InvokeAnnotation;
 }
 
 @doc("An interrupt event for human-in-the-loop.")

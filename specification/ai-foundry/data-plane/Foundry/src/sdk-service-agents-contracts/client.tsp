@@ -257,4 +257,28 @@ namespace Azure.AI.Projects {
   @@usage(AgentDef, Usage.input);
   @@access(ResumeRequest, Access.public);
   @@usage(ResumeRequest, Usage.input);
+  @@access(InvokeAnnotation, Access.public);
+  @@usage(InvokeAnnotation, Usage.output);
+  @@access(InvokeFileAnnotation, Access.public);
+  @@usage(InvokeFileAnnotation, Usage.output);
+  @@access(InvokeError, Access.public);
+  @@usage(InvokeError, Usage.output);
+  @@access(InterruptInfo, Access.public);
+  @@usage(InterruptInfo, Usage.output);
+
+  // Invoke streaming event types
+  @@access(InvokeStreamEvent, Access.public);
+  @@usage(InvokeStreamEvent, Usage.output);
+  @@access(InvocationCreatedEvent, Access.public);
+  @@usage(InvocationCreatedEvent, Usage.output);
+  @@access(MessageDeltaEvent, Access.public);
+  @@usage(MessageDeltaEvent, Usage.output);
+  @@access(AnnotationEvent, Access.public);
+  @@usage(AnnotationEvent, Usage.output);
+  @@access(InterruptEvent, Access.public);
+  @@usage(InterruptEvent, Usage.output);
+  @@access(InvocationCompletedEvent, Access.public);
+  @@usage(InvocationCompletedEvent, Usage.output);
+  @@access(InvokeErrorEvent, Access.public);
+  @@usage(InvokeErrorEvent, Usage.output);
 }
