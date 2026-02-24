@@ -19,9 +19,5 @@ interface Invoke {
   @post
   @route("/invoke")
   @extension("x-ms-foundry-meta", #{ required_previews: #[FoundryFeaturesOptInKeys.hosted_agents_v1_preview] })
-  invoke is FoundryDataPlanePreviewOperation<
-    FoundryFeaturesOptInKeys.hosted_agents_v1_preview,
-    InvokeRequest,
-    InvokeResponse
-  >;
+  invoke(@body body: InvokeRequest): InvokeResponse;
 }
