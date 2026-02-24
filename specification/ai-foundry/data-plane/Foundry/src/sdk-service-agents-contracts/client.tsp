@@ -248,29 +248,29 @@ namespace Azure.AI.Projects {
   @@access(OpenAI.OutputItemCustomToolCallOutput, Access.public);
   @@usage(OpenAI.OutputItemCustomToolCallOutput, Usage.input | Usage.output);
 
-  // Invoke API types
+  // Invoke API types — new adapter design
   @@access(InvokeRequest, Access.public);
   @@usage(InvokeRequest, Usage.input);
   @@access(InvokeResponse, Access.public);
   @@usage(InvokeResponse, Usage.output);
   @@access(AgentDef, Access.public);
   @@usage(AgentDef, Usage.input);
-  @@access(ResumeRequest, Access.public);
-  @@usage(ResumeRequest, Usage.input);
-  @@access(InvokeAnnotation, Access.public);
-  @@usage(InvokeAnnotation, Usage.output);
-  @@access(InvokeFileAnnotation, Access.public);
-  @@usage(InvokeFileAnnotation, Usage.output);
+  @@access(ContentItem, Access.public);
+  @@usage(ContentItem, Usage.input | Usage.output);
+  @@access(InvocationError, Access.public);
+  @@usage(InvocationError, Usage.output);
   @@access(InvokeError, Access.public);
   @@usage(InvokeError, Usage.output);
-  @@access(InterruptInfo, Access.public);
-  @@usage(InterruptInfo, Usage.output);
+  @@access(HistoryEntry, Access.public);
+  @@usage(HistoryEntry, Usage.input);
 
-  // Invoke streaming event types (standalone models — SSE event: line handles discrimination)
+  // Invoke streaming event types
   @@access(InvocationCreatedEvent, Access.public);
   @@usage(InvocationCreatedEvent, Usage.output);
   @@access(MessageDeltaEvent, Access.public);
   @@usage(MessageDeltaEvent, Usage.output);
-  // annotation, interrupt, invocation.completed, and error SSE events reuse
-  // InvokeAnnotation, InterruptInfo, InvokeResponse, and InvokeError directly
+  @@access(ContentDeltaEvent, Access.public);
+  @@usage(ContentDeltaEvent, Usage.output);
+  @@access(InvocationCompletedEvent, Access.public);
+  @@usage(InvocationCompletedEvent, Usage.output);
 }

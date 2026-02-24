@@ -10,12 +10,10 @@ namespace Azure.AI.Projects;
 @tag("Invoke")
 interface Invoke {
   /**
-   * Invoke an agent. Supports both non-streaming and streaming (SSE) responses
-   * controlled by the `stream` field in the request body.
+   * Invoke an agent. Response is always SSE.
    *
-   * For non-streaming: returns an InvokeResponse with the agent's output.
-   * For streaming: returns Server-Sent Events with incremental text deltas
-   * and a terminal invocation.completed event.
+   * Returns Server-Sent Events with incremental text/content deltas
+   * and a terminal invocation.completed event containing the full InvokeResponse.
    */
   #suppress "@azure-tools/typespec-azure-core/no-unnamed-union" ""
   @post

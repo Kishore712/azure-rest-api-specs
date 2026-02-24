@@ -5,371 +5,199 @@ using TypeSpec.OpenAPI;
 
 namespace Azure.AI.Projects;
 
-// --- Enums ---
+// ---------------------------------------------------------------------------
+// Core types
+// ---------------------------------------------------------------------------
 
-@doc("The status of an invocation.")
-union InvocationStatus {
-  string,
-
-  @doc("Agent finished and produced final output.")
-  completed: "completed",
-
-  @doc("Agent paused and is waiting for human input.")
-  requires_input: "requires_input",
-
-  @doc("Agent encountered an error.")
-  failed: "failed",
-
-  @doc("Invocation was cancelled.")
-  cancelled: "cancelled",
-}
-
-@doc("The type of input item.")
-union InputItemType {
-  string,
-
-  @doc("Text input.")
-  text: "text",
-
-  @doc("Image input.")
-  image: "image",
-
-  @doc("Audio input.")
-  audio: "audio",
-
-  @doc("Document input.")
-  document: "document",
-}
-
-@doc("The type of input source.")
-union InputSourceType {
-  string,
-
-  @doc("URL reference.")
-  url: "url",
-
-  @doc("Platform-managed file.")
-  file: "file",
-
-  @doc("Inline base64-encoded data.")
-  base64: "base64",
-}
-
-@doc("The type of invoke annotation.")
-union InvokeAnnotationType {
-  string,
-
-  @doc("A file annotation.")
-  file: "file",
-}
-
-@doc("The type of agent.")
-union AgentDefType {
-  string,
-
-  @doc("A hosted agent.")
-  hosted: "hosted",
-
-  @doc("A prompt agent.")
-  prompt: "prompt",
-
-  @doc("A workflow agent.")
-  workflow: "workflow",
-}
-
-// --- Input Source (discriminated union) ---
-
-@doc("The source of an input item.")
-@discriminator("type")
-model InputSource {
-  @doc("The type of the input source.")
-  type: InputSourceType;
-}
-
-@doc("A URL input source.")
-model UrlInputSource extends InputSource {
-  type: InputSourceType.url;
-
-  @doc("The URL to fetch the input from.")
-  url: string;
-}
-
-@doc("A platform-managed file input source.")
-model FileInputSource extends InputSource {
-  type: InputSourceType.file;
-
-  @doc("The file ID obtained from the Files API.")
-  file_id: string;
-}
-
-@doc("An inline base64-encoded input source.")
-model Base64InputSource extends InputSource {
-  type: InputSourceType.base64;
-
-  @doc("The MIME type of the data for decoding.")
-  media_type: string;
-
-  @doc("The base64-encoded data.")
-  data: string;
-}
-
-// --- Input Items (discriminated union) ---
-
-@doc("An input item for an invocation.")
-@discriminator("type")
-model InputItem {
-  @doc("The type of the input item.")
-  type: InputItemType;
-}
-
-@doc("A text input item.")
-model TextInputItem extends InputItem {
-  type: InputItemType.text;
-
-  @doc("The text content.")
-  text: string;
-}
-
-@doc("An image input item.")
-model ImageInputItem extends InputItem {
-  type: InputItemType.image;
-
-  @doc("The source of the image.")
-  source: InputSource;
-
-  @doc("The image format. Auto-detected if not provided.")
-  format?: string;
-}
-
-@doc("An audio input item.")
-model AudioInputItem extends InputItem {
-  type: InputItemType.audio;
-
-  @doc("The source of the audio.")
-  source: InputSource;
-
-  @doc("The audio format (e.g., pcm16, mp3, wav, opus). Default: pcm16.")
-  format?: string;
-
-  @doc("Modality-specific parameters such as sample_rate.")
-  options?: Record<unknown>;
-}
-
-@doc("A document input item.")
-model DocumentInputItem extends InputItem {
-  type: InputItemType.document;
-
-  @doc("The source of the document.")
-  source: InputSource;
-
-  @doc("Modality-specific parameters such as media_type.")
-  options?: Record<unknown>;
-}
-
-// --- Agent Reference ---
-
-@doc("A reference to the agent being invoked.")
+@doc("Reference to the agent being invoked.")
 model AgentDef {
-  @doc("The name of the agent.")
+  @doc("Agent name.")
   name: string;
 
-  @doc("The version of the agent (e.g., \"1.0\").")
+  @doc("Agent version.")
   version: string;
 
-  @doc("The type of the agent.")
-  type: AgentDefType;
+  @doc("Agent type (e.g. 'hosted').")
+  type: string;
 }
 
-// --- Resume (Human-in-the-loop) ---
+@doc("""
+  A single content item using flat MIME typing.
+  Shared by both `input` and `output` — enables agent chaining
+  (agent A's output becomes agent B's input with zero translation).
+  """)
+model ContentItem {
+  @doc("MIME type (text/plain, image/png, audio/wav, application/pdf, etc.).")
+  content_type: string;
 
-@doc("A resume request used when responding to an interrupt.")
-model ResumeRequest {
-  @doc("Must match the interrupt's id that is being responded to.")
-  interrupt_id: string;
+  @doc("Text payload. Required when content_type is text/*.")
+  text?: string;
 
-  @doc("The human's response. Can be a simple string or structured JSON.")
-  value: unknown;
+  @doc("Remote URL for media content.")
+  url?: url;
+
+  @doc("Platform-managed file reference.")
+  file_id?: string;
+
+  @doc("Suggested filename (typically used in output).")
+  filename?: string;
+
+  @doc("Inline base64-encoded payload.")
+  data?: string;
 }
 
-// --- Annotations ---
-
-@doc("An annotation attached to an invocation response.")
-@discriminator("type")
-model InvokeAnnotation {
-  @doc("The annotation type.")
-  type: InvokeAnnotationType;
+@doc("Terminal status of an invocation.")
+union InvocationStatus {
+  string,
+  @doc("Agent finished successfully.") completed: "completed",
+  @doc("Agent error (exception, timeout).") failed: "failed",
+  @doc("Externally cancelled.") cancelled: "cancelled",
+  @doc("Agent paused, awaiting user input (HITL).") awaiting_input: "awaiting_input",
 }
 
-@doc("A file annotation produced by the agent.")
-model InvokeFileAnnotation extends InvokeAnnotation {
-  type: InvokeAnnotationType.file;
+// ---------------------------------------------------------------------------
+// History
+// ---------------------------------------------------------------------------
 
-  @doc("The platform-managed file ID.")
-  file_id: string;
+@doc("A single turn in the conversation history.")
+model HistoryEntry {
+  @doc("Role: 'user' or 'assistant'.")
+  role: "user" | "assistant";
 
-  @doc("The filename of the produced file.")
-  filename: string;
-
-  @doc("The MIME type of the file.")
-  mime_type: string;
-
-  @doc("The size of the file in bytes.")
-  size_bytes: int64;
+  @doc("The content for this turn (input for user, output for assistant).")
+  content: string | ContentItem[];
 }
 
-// --- Interrupt ---
+// ---------------------------------------------------------------------------
+// Request
+// ---------------------------------------------------------------------------
 
-@doc("Information about a human-in-the-loop interrupt.")
-model InterruptInfo {
-  @doc("Unique identifier for this interrupt. Must be sent back in the resume request.")
-  id: string;
+@doc("Invoke API request body.")
+@extension("x-ms-foundry-meta", #{ required_previews: #[FoundryFeaturesOptInKeys.hosted_agents_v1_preview] })
+model InvokeRequest {
+  @doc("Agent to invoke.")
+  agent_def: AgentDef;
 
-  @doc("Human-readable description of the input needed.")
+  @doc("""
+    Primary user input. String shorthand is normalized to
+    [{"content_type":"text/plain","text":"..."}] by the platform.
+    """)
+  input: string | ContentItem[];
+
+  @doc("Session identifier. Omit to create a new session.")
+  session_id?: string;
+
+  @doc("""
+    Opaque typed pass-through. Platform does not parse this.
+    Use @type discriminator for typed dispatch by wrappers.
+    Examples: model config, HITL resume state.
+    """)
+  metadata?: Record<unknown>;
+
+  @doc("Session history injected by AgentService (not sent by caller).")
+  history?: HistoryEntry[];
+}
+
+// ---------------------------------------------------------------------------
+// Response
+// ---------------------------------------------------------------------------
+
+@doc("Invoke API response — the terminal SSE event payload.")
+model InvokeResponse {
+  @doc("Terminal status of this invocation.")
+  status: InvocationStatus;
+
+  @doc("Session this invocation belongs to.")
+  session_id: string;
+
+  @doc("""
+    Agent response content. Same shape as input — string shorthand
+    or array of ContentItem. Null when status is 'failed'.
+    """)
+  output?: string | ContentItem[];
+
+  @doc("""
+    Opaque typed pass-through from agent. Platform does not parse this.
+    Used for citations, interrupt details, framework-specific state.
+    """)
+  metadata?: Record<unknown>;
+
+  @doc("Structured error details. Present when status is 'failed'.")
+  error?: InvocationError;
+
+  @doc("Unix timestamp (seconds) when invocation started.")
+  created_at: int64;
+
+  @doc("Unix timestamp (seconds) when invocation finished.")
+  completed_at?: int64;
+}
+
+// ---------------------------------------------------------------------------
+// Error (agent-level, in terminal SSE event)
+// ---------------------------------------------------------------------------
+
+@doc("Structured error for agent-level failures in the terminal event.")
+model InvocationError {
+  @doc("Machine-readable error code (e.g. 'container_timeout', 'agent_exception').")
+  code: string;
+
+  @doc("Human-readable error message.")
   message: string;
+
+  @doc("Parameter that caused the error, if applicable.")
+  param?: string;
 }
 
-// --- Error ---
+// ---------------------------------------------------------------------------
+// Error model (HTTP-level, not in SSE stream)
+// ---------------------------------------------------------------------------
 
-@doc("Error information for a failed invocation.")
+@doc("RFC 7807 problem details for platform/transport errors.")
 model InvokeError {
+  @doc("Error type URI.")
+  type: string;
+
   @doc("Machine-readable error code.")
   code: string;
 
   @doc("Human-readable error message.")
   message: string;
+
+  @doc("Parameter that caused the error, if applicable.")
+  param?: string;
 }
 
-// --- Request ---
+// ---------------------------------------------------------------------------
+// SSE events
+// ---------------------------------------------------------------------------
 
-@doc("Request body for invoking an agent.")
-@extension("x-ms-foundry-meta", #{ required_previews: #[FoundryFeaturesOptInKeys.hosted_agents_v1_preview] })
-model InvokeRequest {
-  @doc("Agent reference identifying which agent to invoke.")
-  agent_def: AgentDef;
-
-  @doc("""
-    Array of input items (text, images, audio, documents). Required when resume is not present.
-    Mutually exclusive with resume.
-    """)
-  input?: InputItem[];
-
-  @doc("Identifier of an existing session. Omit to create a new one.")
-  session_id?: string;
-
-  @doc("Optional identifier for grouping related invocations into a logical conversation.")
-  conversation_id?: string;
-
-  @doc("When true, response is delivered as Server-Sent Events. Default false.")
-  stream?: boolean;
-
-  @doc("""
-    Opaque JSON object forwarded to the agent container as-is.
-    Use for model-level knobs (temperature, max_tokens), custom agent flags, or runtime configuration.
-    AgentService does not parse or validate this.
-    """)
-  agent_payload?: Record<unknown>;
-
-  @doc("""
-    Used when responding to an interrupt (status == requires_input).
-    Mutually exclusive with input.
-    """)
-  resume?: ResumeRequest;
-
-  @doc("Key-value pairs stored by AgentService for tracing, auditing, and correlation.")
-  metadata?: Record<string>;
-}
-
-// --- Response ---
-
-@doc("Response from invoking an agent.")
-model InvokeResponse {
-  @doc("Unique identifier for this invocation.")
-  id: string;
-
-  @doc("Terminal state of the invocation.")
-  status: InvocationStatus;
-
-  @doc("Session this invocation belongs to. Store and send in subsequent requests for multi-turn.")
-  session_id: string;
-
-  @doc("Conversation ID if provided in the request. Echoed back for correlation.")
-  conversation_id?: string;
-
-  @doc("The agent's text response.")
-  message: string;
-
-  @doc("Array of annotations (file references, citations) attached to the response. Empty when text-only.")
-  annotations: InvokeAnnotation[];
-
-  @doc("Non-null when status is requires_input. Contains interrupt ID and message.")
-  interrupt?: InterruptInfo;
-
-  @doc("Non-null when status is failed. Contains error code and message.")
-  error?: InvokeError;
-
-  @doc("Unix timestamp (seconds) when invocation started.")
-  @encode("unixTimestamp", int32)
-  created_at: utcDateTime;
-
-  @doc("Unix timestamp (seconds) when invocation completed. Null when paused.")
-  @encode("unixTimestamp", int32)
-  completed_at?: utcDateTime;
-}
-
-// --- Streaming Events ---
-// SSE events use the `event:` line for type discrimination.
-// The `data:` payload is flat (no wrapper object) per the design spec.
-
-@doc("SSE event types for streaming invocations.")
-union InvokeStreamEventType {
-  string,
-
-  @doc("Invocation started.")
-  invocation_created: "invocation.created",
-
-  @doc("Incremental text chunk from the agent.")
-  message_delta: "message.delta",
-
-  @doc("A file annotation.")
-  annotation: "annotation",
-
-  @doc("Agent paused for human input.")
-  interrupt: "interrupt",
-
-  @doc("Terminal event with full response.")
-  invocation_completed: "invocation.completed",
-
-  @doc("Stream-level error.")
-  error: "error",
-}
-
-@doc("SSE data payload for invocation.created event.")
+@doc("SSE event: invocation started.")
 model InvocationCreatedEvent {
-  @doc("The invocation ID.")
-  id: string;
+  @doc("Monotonically increasing event sequence number.")
+  seq: int64;
 
-  @doc("The session ID.")
   session_id: string;
-
-  @doc("The conversation ID if provided.")
-  conversation_id?: string;
-
-  @doc("Status is always in_progress.")
   status: "in_progress";
 }
 
-@doc("SSE data payload for message.delta event.")
+@doc("SSE event: incremental text chunk.")
 model MessageDeltaEvent {
-  @doc("Sequence number starting at 1, incrementing with each delta.")
-  sequence_number: int32;
+  @doc("Monotonically increasing event sequence number.")
+  seq: int64;
 
-  @doc("The text chunk.")
   delta: string;
 }
 
-// Note: The annotation SSE event data is the InvokeAnnotation object itself (flat).
-// The interrupt SSE event data is the InterruptInfo object itself (flat: {id, message}).
-// The invocation.completed SSE event data is the InvokeResponse object itself (flat).
-// The error SSE event data is the InvokeError object itself (flat: {code, message}).
-// These reuse InvokeAnnotation, InterruptInfo, InvokeResponse, and InvokeError directly
-// as their SSE data payloads — no separate wrapper models needed.
+@doc("SSE event: file or media content.")
+model ContentDeltaEvent {
+  @doc("Monotonically increasing event sequence number.")
+  seq: int64;
+
+  content_type: string;
+  file_id?: string;
+  filename?: string;
+  url?: url;
+}
+
+@doc("SSE event: terminal event (same shape as InvokeResponse).")
+model InvocationCompletedEvent is InvokeResponse;
